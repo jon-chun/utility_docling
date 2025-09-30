@@ -1,0 +1,26 @@
+Document Conversion Run Report
+Generated: 2025-09-30 17:24:22
+Mode: PRODUCTION
+
+Configuration:
+  Input types: ['pdf']
+  Output types: ['md']
+  Max file size: 100MB
+  Inputs directory: ./inputs
+  Outputs directory: ./outputs
+  Retry attempts: 2
+
+Files discovered: 1
+
+SUCCESS: wiki_spec-driven-dev.pdf -> ./outputs/wiki_spec-driven-dev_from_pdf.md
+
+======================================================================
+CONVERSION STATISTICS
+======================================================================
+Total files discovered: 1
+Successful conversions: 1
+Failed conversions: 0
+Skipped (same type): 0
+Total data processed: 144.7KB
+Total runtime: 7.5s
+======================================================================

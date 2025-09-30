@@ -1,0 +1,26 @@
+Document Conversion Run Report
+Generated: 2025-09-30 16:24:10
+Mode: PRODUCTION
+
+Configuration:
+  Input types: ['pdf']
+  Output types: ['md']
+  Max file size: 100MB
+  Inputs directory: ./inputs
+  Outputs directory: ./outputs
+  Retry attempts: 2
+
+Files discovered: 1
+
+SUCCESS: arxiv_docling_20241209.pdf -> ./outputs/arxiv_docling_20241209_from_pdf.md
+
+======================================================================
+CONVERSION STATISTICS
+======================================================================
+Total files discovered: 1
+Successful conversions: 1
+Failed conversions: 0
+Skipped (same type): 0
+Total data processed: 5.3MB
+Total runtime: 29.5s
+======================================================================

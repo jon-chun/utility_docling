@@ -412,13 +412,13 @@ def snapshot_directory(src_dir: str, prefix: str) -> str:
 def rotate_inputs(inputs_dir: str, inputs_queue_dir: str, 
                  inputs_staging_dir: str) -> Tuple[str, int, int]:
     """
-    Execute input rotation sequence.
+    Execute input rotation sequence AFTER conversion completes.
     
     Rotation steps:
-    1) ./inputs -> ./inputs_old_{timestamp}
+    1) ./inputs (just processed) -> ./inputs_old_{timestamp}
     2) Recreate empty ./inputs
-    3) Move contents of ./inputs_queue -> ./inputs_staging
-    4) Move contents of ./inputs_staging -> ./inputs
+    3) Move contents of ./inputs_staging -> ./inputs (ready for next run)
+    4) Move contents of ./inputs_queue -> ./inputs_staging (staged for run after next)
     
     Args:
         inputs_dir: Main input directory
@@ -426,21 +426,21 @@ def rotate_inputs(inputs_dir: str, inputs_queue_dir: str,
         inputs_staging_dir: Staging directory
         
     Returns:
-        Tuple of (rotated_dir_path, queue_moved_count, staging_moved_count)
+        Tuple of (rotated_dir_path, staging_moved_count, queue_moved_count)
     """
     old_inputs_path = ""
     stamp = now_stamp()
     
     logger.info("=" * 70)
-    logger.info("ROTATION PHASE: Input staging rotation")
+    logger.info("ROTATION PHASE: Post-conversion input rotation")
     logger.info("=" * 70)
     
-    # Step 1: Rotate old inputs
+    # Step 1: Rotate processed inputs
     if os.path.exists(inputs_dir):
         old_inputs_path = f"./inputs_old_{stamp}"
         try:
             shutil.move(inputs_dir, old_inputs_path)
-            logger.info(f"✓ Rotated: {inputs_dir} -> {old_inputs_path}")
+            logger.info(f"✓ Rotated processed files: {inputs_dir} -> {old_inputs_path}")
         except Exception as e:
             logger.error(f"Failed to rotate {inputs_dir} to {old_inputs_path}: {e}")
             # Best effort: try to clear
@@ -460,25 +460,25 @@ def rotate_inputs(inputs_dir: str, inputs_queue_dir: str,
         ensure_dir(inputs_dir)
     logger.info(f"✓ Created empty: {inputs_dir}")
     
-    # Step 3: Queue -> Staging
-    queue_count = move_contents(inputs_queue_dir, inputs_staging_dir, overwrite=True)
-    if queue_count > 0:
-        logger.info(f"✓ Moved {queue_count} items: {inputs_queue_dir} -> {inputs_staging_dir}")
-    else:
-        logger.info(f"No items in {inputs_queue_dir}")
-    
-    # Step 4: Staging -> Inputs
+    # Step 3: Staging -> Inputs (ready for next run)
     staging_count = move_contents(inputs_staging_dir, inputs_dir, overwrite=True)
     if staging_count > 0:
-        logger.info(f"✓ Moved {staging_count} items: {inputs_staging_dir} -> {inputs_dir}")
+        logger.info(f"✓ Moved {staging_count} items: {inputs_staging_dir} -> {inputs_dir} (ready for next run)")
     else:
         logger.info(f"No items in {inputs_staging_dir}")
+    
+    # Step 4: Queue -> Staging (staged for run after next)
+    queue_count = move_contents(inputs_queue_dir, inputs_staging_dir, overwrite=True)
+    if queue_count > 0:
+        logger.info(f"✓ Moved {queue_count} items: {inputs_queue_dir} -> {inputs_staging_dir} (staged for next run)")
+    else:
+        logger.info(f"No items in {inputs_queue_dir}")
     
     # Log final state
     logger.info(f"Empty directories preserved: {inputs_queue_dir}, {inputs_staging_dir}")
     logger.info("=" * 70)
     
-    return old_inputs_path, queue_count, staging_count
+    return old_inputs_path, staging_count, queue_count
 
 
 # ============================================================================
@@ -888,19 +888,21 @@ def main():
         ensure_dir(outputs_dir)
         ensure_dir(inputs_queue_dir)
         ensure_dir(inputs_staging_dir)
+        ensure_dir(inputs_dir)  # Ensure inputs exists before processing
         
         # Snapshot outputs (before conversion, preserves previous run)
         if not args.dry_run:
             outputs_snapshot = snapshot_directory(outputs_dir, "outputs")
             logger.info(f"Previous outputs preserved at: {outputs_snapshot}")
         
-        # Execute input rotation
+        # Process conversions FIRST (convert what's currently in inputs)
+        stats = process_conversions(config, dry_run=args.dry_run)
+        
+        # Execute input rotation AFTER conversion
+        logger.info("")
         rotated_input, queue_moved, staging_moved = rotate_inputs(
             inputs_dir, inputs_queue_dir, inputs_staging_dir
         )
-        
-        # Process conversions
-        stats = process_conversions(config, dry_run=args.dry_run)
         
         # Final summary
         logger.info("")

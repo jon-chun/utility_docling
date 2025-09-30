@@ -1,0 +1,42 @@
+# Document Conversion Pipeline Configuration
+# 
+# This file configures the document conversion system with rotation and staging.
+# All settings can be overridden via command-line arguments.
+
+# Input file types to process (extensions without dots)
+input_types:
+  - pdf
+  # - docx
+  # - txt
+  # - html
+
+# Output file types to generate (extensions without dots)
+output_types:
+  - md
+  # - html
+  # - txt
+  # - docx
+
+# Maximum file size in megabytes (files larger than this will be skipped)
+max_file_size_mb: 100
+
+# Retry configuration for failed conversions
+retry_attempts: 2
+retry_delay_seconds: 1.0
+
+# Directory paths (relative or absolute)
+directories:
+  # Main input directory (gets rotated each run)
+  inputs: ./inputs
+  
+  # Output directory (preserves previous run as snapshot)
+  outputs: ./outputs
+  
+  # Queue directory (files here move to staging on each run)
+  inputs_queue: ./inputs_queue
+  
+  # Staging directory (files here move to inputs on each run)
+  inputs_staging: ./inputs_staging
+
+# Processing options
+# (Future expansion: parallel processing, custom export options, etc.)
